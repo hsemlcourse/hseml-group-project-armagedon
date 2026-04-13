@@ -1,9 +1,9 @@
 [![Review Assignment Due Date](https://classroom.github.com/assets/deadline-readme-button-22041afd0340ce965d47ae6ef1cefeee28c7c493a6346c4f15d667ab976d596c.svg)](https://classroom.github.com/a/kOqwghv0)
-# ML Project — [Название проекта]
+# ML Project — Предсказание наличия диабета
 
-**Студент:** [ФИО / Student ID]
+**Студент:** Курило Илья Константинович
 
-**Группа:** [Группа]
+**Группа:** БИВ231
 
 
 ## Оглавление
@@ -20,11 +20,11 @@
 
 <!-- Кратко опишите задачу: что предсказываем, какой датасет, метрика качества -->
 
-**Задача:** [Классификация / Регрессия / Кластеризация / ...]
+**Задача:** Классификация (диабет есть/нет/преддиабет)
 
-**Датасет:** [Название и источник датасета]
+**Датасет:** [Diabetes Health Indicators Dataset (diabetes _ 012 _ health _ indicators _ BRFSS2015.csv)](https://www.kaggle.com/datasets/alexteboul/diabetes-health-indicators-dataset/data)
 
-**Целевая метрика:** [Accuracy / F1 / RMSE / ...]
+**Целевая метрика:** Precision, Recall, F1-score, ROC-AUC, PR-AUC
 
 
 ## Структура репозитория
