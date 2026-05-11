@@ -1,0 +1,8 @@
+services:
+  ml-project:
+    build: .
+    ports:
+      - "8888:8888"
+    volumes:
+      - .:/app
+    container_name: diabetes_prediction_container
