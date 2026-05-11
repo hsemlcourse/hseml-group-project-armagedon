@@ -34,7 +34,7 @@
 ├── data
 │   ├── processed               # Очищенные и обработанные данные
 │   └── raw                     # Исходные файлы
-├── models                      # Сохранённые модели 
+├── models                      # Сохранённые модели
 ├── notebooks
 │   ├── 01_eda.ipynb            # EDA
 │   ├── 02_baseline.ipynb       # Baseline-модель
