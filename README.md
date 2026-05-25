@@ -9,18 +9,17 @@
 ## Оглавление
 
 1. [Описание задачи](#описание-задачи)
-2. [Структура репозитория](#структура-репозитория)
-3. [Запуски](#быстрый-старт)
-4. [Данные](#данные)
-5. [Результаты](#результаты)
-7. [Отчёт](#отчёт)
+2. [Запуск сервиса](#запуск-сервиса)
+3. [API](#api)
+4. [Результаты](#результаты)
+5. [Отчёт](#отчёт)
 
 
 ## Описание задачи
 
 <!-- Кратко опишите задачу: что предсказываем, какой датасет, метрика качества -->
 
-**Задача:** Классификация (диабет есть/нет/преддиабет)
+**Задача:** Классификация (диабет есть/нет)
 
 **Датасет:** [Diabetes Health Indicators Dataset (diabetes _ 012 _ health _ indicators _ BRFSS2015.csv)](https://www.kaggle.com/datasets/alexteboul/diabetes-health-indicators-dataset/data)
 
@@ -28,7 +27,6 @@
 
 
 ## Структура репозитория
-Опишите структуру проекта, сохранив при этом верхнеуровневые папки. Можно добавить новые при необходимости.
 ```
 .
 ├── data
@@ -44,38 +42,46 @@
 │   ├── images                  # Изображения для отчёта
 │   └── report.md               # Финальный отчёт
 ├── src
-│   ├── preprocessing.py        # Предобработка данных
-│   └── modeling.py             # Обучение и оценка моделей
+│   ├── api.py                  # FastAPI и HTML-интерфейс
+│   └── modeling.py             # Обучение и экспорт финальной модели
 ├── tests
 │   └── test.py                 # Тесты пайплайна
 ├── requirements.txt
 └── README.md
 ```
 
-## Запуск
+## Запуск сервиса
 
-Этот блок замените способом запуска вашего сервиса.
 ```bash
-# 1. Клонировать репозиторий
-git clone <url>
-cd <repo-name>
-
-# 2. Создать виртуальное окружение
-python -m venv .venv
-source .venv/bin/activate   # Linux/macOS
-# .venv\Scripts\activate    # Windows
-
-# 3. Установить зависимости
-pip install -r requirements.txt
+# Сервис с готовой моделью
+docker compose up --build
 ```
 
-## Данные
-- `data/raw/` — исходные файлы
-- `data/processed/` — предобработанные данные
+После запуска:
 
+- интерфейс: <http://localhost:8000/>
+- Swagger/OpenAPI: <http://localhost:8000/docs>
+- проверка состояния: <http://localhost:8000/health>
+
+Если требуется переобучить артефакт по исходному CSV:
+
+```bash
+docker compose run --rm ml-project python -m src.modeling
+```
+
+## API
+
+`POST /predict` принимает 21 показатель анкеты BRFSS и возвращает вероятность
+принадлежности к группе риска и бинарный прогноз. Например:
+
+```bash
+curl -X POST http://localhost:8000/predict \
+  -H "Content-Type: application/json" \
+  -d '{"HighBP":1,"HighChol":1,"CholCheck":1,"BMI":33,"Smoker":0,"Stroke":0,"HeartDiseaseorAttack":0,"PhysActivity":0,"Fruits":1,"Veggies":1,"HvyAlcoholConsump":0,"AnyHealthcare":1,"NoDocbcCost":0,"GenHlth":4,"MentHlth":2,"PhysHlth":5,"DiffWalk":0,"Sex":1,"Age":9,"Education":5,"Income":6}'
+```
 
 ## Результаты
-Здесь коротко выпишите результаты.
+
 | Модель | F1-Score | ROC-AUC | Примечание |
 |--------|-------------|-------------|------------|
 | Baseline (Logistic Regression) | 0.4700 | 0.8177 | Хорошие линейные зависимости |

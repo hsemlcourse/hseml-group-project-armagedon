@@ -2,7 +2,12 @@ services:
   ml-project:
     build: .
     ports:
-      - "8888:8888"
+      - "8000:8000"
     volumes:
       - .:/app
     container_name: diabetes_prediction_container
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health')"]
+      interval: 10s
+      timeout: 3s
+      retries: 3

@@ -61,6 +61,7 @@ models/*.pt
 models/*.pth
 models/*.onnx
 !models/.gitkeep
+!models/diabetes_catboost.cbm
 
 # =============================================================================
 # Reports — figures are regenerated, but keep CSV

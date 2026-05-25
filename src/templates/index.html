@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Оценка риска диабета</title>
+  <style>
+    :root { --navy: #132a3a; --teal: #167d7f; --bg: #f2f6f4; --card: #fff; --muted: #59717a; }
+    * { box-sizing: border-box; }
+    body { margin: 0; color: var(--navy); background: var(--bg); font: 15px Arial, sans-serif; }
+    header { padding: 34px max(calc((100% - 1120px) / 2), 26px) 24px; background: var(--navy); color: white; }
+    header h1 { margin: 0 0 10px; font-size: 30px; }
+    header p { margin: 0; max-width: 760px; color: #dce8e7; line-height: 1.45; }
+    main { max-width: 1120px; margin: 24px auto; padding: 0 20px 30px; display: grid; grid-template-columns: 1fr 315px; gap: 22px; }
+    .card { background: var(--card); border-radius: 14px; padding: 22px; box-shadow: 0 1px 8px #17304012; }
+    h2 { margin: 0 0 16px; font-size: 19px; }
+    .fields { display: grid; grid-template-columns: repeat(3, 1fr); gap: 13px; }
+    label { color: var(--muted); display: flex; flex-direction: column; gap: 5px; font-size: 13px; }
+    input, select { border: 1px solid #cad7d4; border-radius: 7px; padding: 9px; font-size: 14px; color: var(--navy); background: white; }
+    .wide { grid-column: span 3; }
+    .hint { font-size: 12px; line-height: 1.35; color: var(--muted); }
+    button { margin-top: 19px; width: 100%; border: 0; border-radius: 8px; padding: 13px; color: white; background: var(--teal); font-weight: bold; cursor: pointer; }
+    .result { min-height: 112px; padding: 16px; border-radius: 10px; background: #eaf3f0; margin-bottom: 18px; }
+    .result strong { display: block; font-size: 21px; margin: 8px 0; }
+    .links a { display: block; color: var(--teal); margin-top: 9px; }
+    small { line-height: 1.45; color: var(--muted); }
+    @media (max-width: 880px) { main { grid-template-columns: 1fr; } .fields { grid-template-columns: repeat(2, 1fr); } }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Оценка риска диабета</h1>
+    <p>Учебная модель на индикаторах здоровья BRFSS 2015. Результат является оценкой риска, а не медицинским диагнозом.</p>
+  </header>
+  <main>
+    <form id="prediction-form" class="card">
+      <h2>Параметры респондента</h2>
+      <div id="fields" class="fields"></div>
+      <button type="submit">Рассчитать риск</button>
+    </form>
+    <aside class="card">
+      <h2>Результат</h2>
+      <div id="result" class="result">Заполните форму и отправьте запрос.</div>
+      <small>Порог классификации: 0.50. Модель: CatBoost с балансировкой классов.</small>
+      <div class="links">
+        <a href="/docs">Swagger API документация</a>
+        <a href="/health">Проверка состояния API</a>
+      </div>
+    </aside>
+  </main>
+  <script>
+    const binary = [["0", "Нет"], ["1", "Да"]];
+    const ageCategories = [
+      ["1", "18-24 года"], ["2", "25-29 лет"], ["3", "30-34 года"],
+      ["4", "35-39 лет"], ["5", "40-44 года"], ["6", "45-49 лет"],
+      ["7", "50-54 года"], ["8", "55-59 лет"], ["9", "60-64 года"],
+      ["10", "65-69 лет"], ["11", "70-74 года"], ["12", "75-79 лет"],
+      ["13", "80 лет и старше"]
+    ];
+    const educationCategories = [
+      ["1", "Не учился(ась) или только детский сад"],
+      ["2", "Начальная школа (1-8 классы)"],
+      ["3", "Неполная средняя школа (9-11 классы)"],
+      ["4", "Средняя школа или GED"],
+      ["5", "Колледж / техникум, 1-3 года"],
+      ["6", "Оконченное высшее образование"]
+    ];
+    const incomeCategories = [
+      ["1", "Менее $10 000"], ["2", "$10 000 - $14 999"],
+      ["3", "$15 000 - $19 999"], ["4", "$20 000 - $24 999"],
+      ["5", "$25 000 - $34 999"], ["6", "$35 000 - $49 999"],
+      ["7", "$50 000 - $74 999"], ["8", "$75 000 и более"]
+    ];
+    const definitions = [
+      ["HighBP", "Высокое давление", binary, "1"], ["HighChol", "Высокий холестерин", binary, "1"],
+      ["CholCheck", "Проверяли холестерин", binary, "1"], ["BMI", "Индекс массы тела", null, "33"],
+      ["Smoker", "Курение", binary, "0"], ["Stroke", "Инсульт", binary, "0"],
+      ["HeartDiseaseorAttack", "Болезни сердца", binary, "0"], ["PhysActivity", "Физическая активность", binary, "0"],
+      ["Fruits", "Фрукты ежедневно", binary, "1"], ["Veggies", "Овощи ежедневно", binary, "1"],
+      ["HvyAlcoholConsump", "Много алкоголя", binary, "0"], ["AnyHealthcare", "Есть медстраховка", binary, "1"],
+      ["NoDocbcCost", "Не обращался из-за цены", binary, "0"], ["GenHlth", "Общее здоровье (1-5)", null, "4"],
+      ["MentHlth", "Плохое псих. здоровье (дней)", null, "2"], ["PhysHlth", "Плохое физ. здоровье (дней)", null, "5"],
+      ["DiffWalk", "Трудно ходить", binary, "0"], ["Sex", "Мужской пол", binary, "1"],
+      ["Age", "Возраст", ageCategories, "9"],
+      ["Education", "Образование", educationCategories, "5"],
+      ["Income", "Годовой доход домохозяйства (USD)", incomeCategories, "6"]
+    ];
+    const numericLimits = {BMI: [10, 100, "0.1"], GenHlth: [1, 5, "1"], MentHlth: [0, 30, "1"], PhysHlth: [0, 30, "1"]};
+    const fields = document.getElementById("fields");
+    definitions.forEach(([name, text, options, value]) => {
+      const label = document.createElement("label"); label.textContent = text;
+      let input;
+      if (options) {
+        input = document.createElement("select");
+        options.forEach(([optionValue, caption]) => input.add(new Option(caption, optionValue, false, optionValue === value)));
+      } else {
+        input = document.createElement("input"); input.type = "number"; input.value = value;
+        [input.min, input.max, input.step] = numericLimits[name];
+      }
+      input.name = name; label.appendChild(input);
+      if (name === "Income") {
+        label.className = "wide";
+        const hint = document.createElement("span");
+        hint.className = "hint";
+        hint.textContent = "Используется годовой доход всего домохозяйства, как в исходном опросе BRFSS.";
+        label.appendChild(hint);
+      }
+      fields.appendChild(label);
+    });
+    document.getElementById("prediction-form").addEventListener("submit", async event => {
+      event.preventDefault();
+      const values = Object.fromEntries(new FormData(event.target).entries());
+      Object.keys(values).forEach(key => values[key] = Number(values[key]));
+      const response = await fetch("/predict", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(values)});
+      const target = document.getElementById("result");
+      if (!response.ok) { target.textContent = "Проверьте корректность введенных значений."; return; }
+      const prediction = await response.json();
+      target.innerHTML = `<span>Вероятность риска</span><strong>${(prediction.risk_probability * 100).toFixed(1)}%</strong><span>${prediction.label}</span>`;
+    });
+  </script>
+</body>
+</html>
